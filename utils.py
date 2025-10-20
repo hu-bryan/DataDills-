@@ -89,9 +89,11 @@ def get_network(model, channel, num_classes, im_size=(32, 32)):
 
     return net 
 
-def get_method(method):
+def get_method(method, trainset, img_synth, label_synth, num_classes, channel, img_size, args):
     if method == 'DM':
-        return DM()
+        return DM(trainset, img_synth, label_synth, num_classes, channel, img_size, args)
+    else: # just filler for now
+        return DM(trainset, img_synth, label_synth, num_classes, channel, img_size, args)
 
 class TensorDataset(Dataset):
     def __init__(self, images, labels):
@@ -139,7 +141,7 @@ def train_using_synth(net, img_synth, label_synth, args):
     lr = float(args.lr_net)
     num_epochs = int(args.train_iters)
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0005)
     criterion = nn.CrossEntropyLoss().to(args.device)
 
     trainset = TensorDataset(img_synth, label_synth)
@@ -154,7 +156,7 @@ def train_using_real(net, trainloader, args):
     lr = float(args.lr_net)
     num_epochs = int(args.train_iters)
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0005)
     criterion = nn.CrossEntropyLoss().to(args.device)
 
     for epoch in range(num_epochs):
@@ -163,7 +165,7 @@ def train_using_real(net, trainloader, args):
 
 def test(net, testloader, args):
     lr = float(args.lr_net)
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0005)
     criterion = nn.CrossEntropyLoss().to(args.device)
     test_loss, test_acc = epoch(net, testloader, optimizer, criterion, args, train=False)
     return test_loss, test_acc

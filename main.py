@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument('--batch_real', type=int, default=256, help='batch size for real data')
     parser.add_argument('--in', type=int, default=256, help='batch size for training networks')
     parser.add_argument('--data_path', type=str, default='data', help='dataset path')
-    parser.add_argument('--save_path', type=str, default='result', help='path to save results')
+    parser.add_argument('--output_path', type=str, default='./output.txt', help='path to write results')
 
     args = parser.parse_args()
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -46,15 +46,14 @@ def main(args):
     ) = get_dataset(args.dataset, args.data_path)
 
 
-    distillation = get_method(args.method)
-
     test_model_real = get_network(args.test_model, channel, num_classes, img_size)
 
     img_synth = torch.randn(size=(num_classes * args.ipc, channel, *img_size), 
                             dtype=torch.float, requires_grad=True, device=args.device)
     label_synth = torch.tensor([np.ones(args.ipc)*i for i in range(num_classes)], dtype=torch.long, requires_grad=False, device=args.device).view(-1) # [0,0,0, 1,1,1, ..., 9,9,9]
 
-    
+    distillation = get_method(args.method, trainset, img_synth, label_synth, num_classes, channel, img_size, args)
+
     synth_results = [0] * args.synth_checks
     check_iters = [(i + 1) * (args.iterations / args.synth_checks) - 1 for i in range(args.synth_checks)]
 
@@ -64,11 +63,12 @@ def main(args):
     # this is because distillation is a randomized process
     # I think?????
 
+
     for iters in range(args.iterations): 
         running_synth_time = 0.0
         start_synth_time = time.time()
 
-        distillation.synthesize(img_synth, label_synth, args.ipc, args.lr_img)
+        distillation.synthesize(args)
 
         stop_synth_time = time.time()
         running_synth_time += (stop_synth_time - start_synth_time)
@@ -82,7 +82,7 @@ def main(args):
     train_using_real(test_model_real, trainloader, args)  
     real_results = test(test_model_real, testloader, args)
 
-    write_output('./output.txt', real_results, synth_results, args)
+    write_output(args.output_path, real_results, synth_results, args)
     return (real_results, synth_results) 
 
 def write_output(file_path, real_results, synth_results, args):
