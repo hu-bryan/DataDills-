@@ -1,4 +1,3 @@
-import os
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
@@ -57,16 +56,31 @@ def get_dataset(dataset, data_path):
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=2, shuffle=True, num_workers=4) #?
     testloader = torch.utils.data.DataLoader(testset, batch_size=256, shuffle=False, num_workers=0)
-    return channel, img_size, num_classes, class_names, mean, std, trainset, testset, trainloader, testloader
+
+    obj = {
+        'channel': channel, 
+        'img_size': img_size, 
+        'num_classes': num_classes,
+        'class_names': class_names,
+        'mean': mean, 
+        'std': std, 
+        'trainset': trainset, 
+        'testset': testset, 
+        'trainloader': trainloader, 
+        'testloader': testloader
+    }
+
+    return obj
+
+
+
 
 def get_default_convnet_setting():
     net_width, net_depth, net_act, net_norm, net_pooling = 128, 3, 'relu', 'instancenorm', 'avgpooling'
     return net_width, net_depth, net_act, net_norm, net_pooling
 
-def get_network(model, channel, num_classes, im_size=(32, 32)):
-    seed = int.from_bytes(os.urandom(4), 'little') 
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+def get_network(model, channel, num_classes, im_size, seed):
+    torch.random.manual_seed(seed) 
 
     net_width, net_depth, net_act, net_norm, net_pooling = get_default_convnet_setting()
 
@@ -84,16 +98,15 @@ def get_network(model, channel, num_classes, im_size=(32, 32)):
         net = None
         exit(f'unknown model {model}')
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    net = net.to(device)
-
     return net 
 
-def get_method(method, trainset, img_synth, label_synth, num_classes, channel, img_size, args):
+def get_method(img_synth, label_synth, dataset, args):
+    method = args.method 
+
     if method == 'DM':
-        return DM(trainset, img_synth, label_synth, num_classes, channel, img_size, args)
+        return DM(img_synth, label_synth, dataset, args)
     else: # just filler for now
-        return DM(trainset, img_synth, label_synth, num_classes, channel, img_size, args)
+        return DM(img_synth, label_synth, dataset, args)
 
 class TensorDataset(Dataset):
     def __init__(self, images, labels):
@@ -147,7 +160,7 @@ def train_using_synth(net, img_synth, label_synth, args):
     trainset = TensorDataset(img_synth, label_synth)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_train, shuffle=True, num_workers=0)
 
-    for epoch in range(num_epochs):
+    for _ in range(num_epochs):
         train_loss, train_acc = epoch(net, trainloader, optimizer, criterion, args.device)
         # print(f'Epoch {epoch} out of {num_epochs}: loss {train_loss : .4f}, accuracy {train_acc : .4f}')
 
@@ -159,7 +172,7 @@ def train_using_real(net, trainloader, args):
     optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0005)
     criterion = nn.CrossEntropyLoss().to(args.device)
 
-    for epoch in range(num_epochs):
+    for _ in range(num_epochs):
         train_loss, train_acc = epoch(net, trainloader, optimizer, criterion, args.device)
 
 

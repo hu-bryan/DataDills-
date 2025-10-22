@@ -19,62 +19,71 @@ class Distillation:
         pass
             
 class DM:
-    def __init__(self, trainset, img_synth, label_synth, num_classes, channel, img_size, args):
+    def __init__(self, img_synth, label_synth, dataset, args):
         self.img = img_synth
         self.label = label_synth
 
-        self.trainset = trainset
-
-        N = len(trainset)
-        self.indices_class = [[] for c in range(num_classes)]
-        for i in range(N):
-            _, lab = trainset[i]           # (transforms applied if dataset has transform)
+        m = len(dataset['trainset'])
+        self.indices_class = [[] for c in range(dataset['num_classes'])]
+        for i in range(m):
+            _, lab = dataset['trainset'][i]          
             self.indices_class[lab].append(i)
 
-        self.num_classes = num_classes
-        self.channel = channel
-        self.img_size = img_size 
         self.optimizer = torch.optim.Adam([self.img], lr=args.lr_img, betas=(0.5, 0.999)) 
         self.optimizer.zero_grad()
 
         self.dsa_param = ParamDiffAug()
         self.dsa_strategy = 'color_crop_cutout_flip_scale_rotate'
-        self.dsa = True
 
-    def synthesize(self, args): 
-        net = get_network(args.train_model, self.channel, self.num_classes, self.img_size).to(args.device)
-        net.train()
-        for param in list(net.parameters()):
+        self.seed = int.from_bytes(os.urandom(4), 'little') 
+        self.net = get_network(args.synth_model, dataset['channel'], dataset['num_classes'], dataset['img_size'], self.seed).to(args.device)
+        self.net.train()
+        for param in list(self.net.parameters()):
             param.requires_grad = False
+        self.embed = self.net.module.embed if torch.cuda.device_count() > 1 else self.net.embed 
 
-        embed = net.module.embed if torch.cuda.device_count() > 1 else net.embed 
-
-
+    def synthesize(self, dataset, args): 
         def get_images(c, n):
             idx_shuffle = np.random.permutation(self.indices_class[c])[:n]
-            imgs = [self.trainset[i][0].to(args.device) for i in idx_shuffle]
+            imgs = [dataset['trainset'][i][0].to(args.device) for i in idx_shuffle]
             return torch.stack(imgs, dim=0)  
 
         # assuming ConvNet I think?
         loss = torch.tensor(0.0).to(args.device)
-        for c in range(self.num_classes):
-            img_real = get_images(c, args.batch_real)
-            img_syn = self.img[c * args.ipc : (c + 1) * args.ipc].reshape((args.ipc, self.channel, *self.img_size))
+        for c in range(dataset['num_classes']):
+            img_real_by_class = get_images(c, args.batch_real)
+            img_synth_by_class = self.img[c * args.ipc : (c + 1) * args.ipc].reshape((args.ipc, dataset['channel'], *dataset['img_size']))
 
-            if args.dsa:
-                seed = int.from_bytes(os.urandom(4), 'little') 
-                img_real = DiffAugment(img_real, self.dsa_param, self.dsa_strategy, seed=seed)
-                img_syn = DiffAugment(img_syn, self.dsa_param, self.dsa_strategy, seed=seed)
 
-            output_real = embed(img_real).detach()
-            output_syn = embed(img_syn)
+            seed = int.from_bytes(os.urandom(4), 'little') 
+            img_real_by_class = DiffAugment(img_real_by_class, self.dsa_param, self.dsa_strategy, seed=seed)
+            img_synth_by_class = DiffAugment(img_synth_by_class, self.dsa_param, self.dsa_strategy, seed=seed)
 
-            loss += torch.sum((torch.mean(output_real, dim=0) - torch.mean(output_syn, dim=0))**2)
+            output_real = self.embed(img_real_by_class).detach()
+            output_synth = self.embed(img_synth_by_class)
+
+            loss += torch.sum((torch.mean(output_real, dim=0) - torch.mean(output_synth, dim=0))**2)
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         
+
+# JUST EXAMPLE
+
+class GLaD:
+    def __init__(self, synth_img):
+        self.synth_img = synth_img     # pass by reference
+        self.initialized_latent_whatever = None
+        pass
+    
+    def pre_trained_generator_G(self):
+        pass 
+
+    def synthesize(self, args):
+        # compute loss L
+        self.initialized_latent_whatever = 42 # update by optimization on L 
+        self.synth_img = self.pre_trained_generator_G(self.initialized_latent_whatever)
 
 
 

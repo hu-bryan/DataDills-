@@ -1,0 +1,14 @@
+name: C:\Users\brian\programming_projects\conda_envs\ez_pytorch_env
+channels:
+  - defaults
+dependencies:
+  - jupyter
+  - matplotlib
+  - numpy
+  - pandas
+  - python=3.11
+  - pytorch
+  - scikit-learn
+  - torchaudio
+  - torchvision
+prefix: C:\Users\brian\programming_projects\conda_envs\ez_pytorch_env
