@@ -153,7 +153,7 @@ def test(net, testloader, args):
     lr = float(args.lr_net)
     optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0005)
     criterion = nn.CrossEntropyLoss().to(args.device)
-    test_loss, test_acc = epoch(net, testloader, optimizer, criterion, args, train=False)
+    test_loss, test_acc = epoch(net, testloader, optimizer, criterion, args.device, train=False)
     return test_loss, test_acc
 
 
