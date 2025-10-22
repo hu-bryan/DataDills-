@@ -54,7 +54,7 @@ def get_dataset(dataset, data_path):
     else:
         exit(f'unknown dataset: {dataset}')
 
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=2, shuffle=True, num_workers=4) #?
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True, num_workers=4)
     testloader = torch.utils.data.DataLoader(testset, batch_size=256, shuffle=False, num_workers=0)
 
     obj = {
@@ -125,13 +125,13 @@ def train_using_synth(net, img_synth, label_synth, args):
     img_synth = img_synth.to(args.device)
     label_synth = label_synth.to(args.device)
     lr = float(args.lr_net)
-    num_epochs = int(args.train_iters)
-
+    num_epochs = int(args.train_epochs)
+ 
     optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0005)
     criterion = nn.CrossEntropyLoss().to(args.device)
 
     trainset = TensorDataset(img_synth, label_synth)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_train, shuffle=True, num_workers=0)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_synth, shuffle=True, num_workers=0)
 
     for _ in range(num_epochs):
         train_loss, train_acc = epoch(net, trainloader, optimizer, criterion, args.device)

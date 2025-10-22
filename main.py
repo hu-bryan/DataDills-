@@ -28,13 +28,15 @@ def parse_args():
     parser.add_argument('--lr_img', type=float, default=1.0, help='learning rate for updating synthetic images')
     parser.add_argument('--lr_net', type=float, default=0.01, help='learning rate for updating network parameters')
     parser.add_argument('--batch_real', type=int, default=186, help='batch size for real data')
+    parser.add_argument('--batch_synth', type=int, default=64, help='batch size for synthetic data')
+
     # parser.add_argument('--in', type=int, default=256, help='batch size for training networks')
     
     parser.add_argument('--output_path', type=str, default='./output.txt', help='path to write results')
 
     args = parser.parse_args()
 
-    args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     args.seed = int.from_bytes(os.urandom(4), 'little')    # seed for the model that gets trained, so all training starts with same init param.
 
     return args
