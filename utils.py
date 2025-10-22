@@ -140,7 +140,7 @@ def train_using_synth(net, img_synth, label_synth, args):
 def train_using_real(net, trainloader, args):
     net = net.to(args.device)
     lr = float(args.lr_net)
-    num_epochs = int(args.train_iters)
+    num_epochs = int(args.train_epochs)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=0.0005)
     criterion = nn.CrossEntropyLoss().to(args.device)
