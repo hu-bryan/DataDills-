@@ -81,7 +81,7 @@ def main(args):
         time_elapsed = 0.0
         time_start = time.time()
 
-        distillation.synthesize(args)
+        distillation.synthesize(dataset, args)
 
         time_stop = time.time()
         time_elapsed += time_stop - time_start
