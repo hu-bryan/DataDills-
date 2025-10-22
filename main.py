@@ -3,30 +3,31 @@ import time
 import torch
 import numpy as np
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-from utils import get_dataset, get_network, get_method, train_using_synth, train_using_real, test
+from utils import get_dataset, get_method, train_using_synth, train_using_real, test
+from networks import get_network
 
 
 def parse_args():
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
 	                        conflict_handler='resolve')
-    parser.add_argument('--dataset_name', type=str, default='CIFAR10', help='dataset')
-    parser.add_argument('--data_path', type=str, default='data', help='dataset path')
+    parser.add_argument('--dataset_name', type=str, default='FashionMNIST', help='dataset')
+    parser.add_argument('--data_path', type=str, default='./temp_data_path', help='dataset path')
 
     parser.add_argument('--method', type=str, default='DM', help="distillation method")
-    parser.add_argument('--ipc', type=int, default=50, help='images per class')
+    parser.add_argument('--ipc', type=int, default=3, help='images per class')
 
     parser.add_argument('--synth_model', type=str, default='ConvNet', help='model used to synthesize')
     parser.add_argument('--train_model', type=str, default='ConvNet', help='model that is trained on real/synth data')
     
     parser.add_argument('--num_tests', type=int, default=10, help='number of times to train a model on real/synth data')
     # parser.add_argument('--num_eval', type=int, default=20, help='the number of evaluating randomly initialized models')
-    parser.add_argument('--train_epochs', type=int, default=1000, help='epochs to train a model on data') 
-    parser.add_argument('--synth_iters', type=int, default=20000, help='iterations to syntheize images')
+    parser.add_argument('--train_epochs', type=int, default=10, help='epochs to train a model on data') 
+    parser.add_argument('--synth_iters', type=int, default=10, help='iterations to syntheize images')
     parser.add_argument('--synth_checks', type=int, default=1, help='number of checkpoints during synthesis')
 
     parser.add_argument('--lr_img', type=float, default=1.0, help='learning rate for updating synthetic images')
     parser.add_argument('--lr_net', type=float, default=0.01, help='learning rate for updating network parameters')
-    parser.add_argument('--batch_real', type=int, default=256, help='batch size for real data')
+    parser.add_argument('--batch_real', type=int, default=186, help='batch size for real data')
     # parser.add_argument('--in', type=int, default=256, help='batch size for training networks')
     
     parser.add_argument('--output_path', type=str, default='./output.txt', help='path to write results')
@@ -71,7 +72,7 @@ def main(args):
         repeats=args.ipc
     ) # [0,0,0, 1,1,1, ..., 9,9,9]
     
-    distillation = get_method(img_synth_ label_synth, dataset, args)
+    distillation = get_method(img_synth, label_synth, dataset, args)
 
     synth_results = []
     check_iters = [(i + 1) * (args.synth_iters / args.synth_checks) - 1 for i in range(args.synth_checks)]
@@ -92,7 +93,7 @@ def main(args):
 
     real_results = test_real(dataset, args) 
 
-    write_output(args.output_path, real_results, synth_results, args)
+    # write_output(args.output_path, real_results, synth_results, args)
     return (real_results, synth_results) 
 
 

@@ -1,5 +1,29 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+def get_network(model, channel, num_classes, im_size, seed):
+    torch.random.manual_seed(seed) 
+
+    net_width, net_depth, net_act, net_norm, net_pooling = get_default_convnet_setting()
+
+    if model == 'ConvNet':
+        net = ConvNet(channel=channel, num_classes=num_classes, net_width=net_width, net_depth=net_depth, net_act=net_act, net_norm=net_norm, net_pooling=net_pooling, im_size=im_size)
+    elif model == 'ConvNetD1':
+        net = ConvNet(channel=channel, num_classes=num_classes, net_width=net_width, net_depth=1, net_act=net_act, net_norm=net_norm, net_pooling=net_pooling, im_size=im_size)
+    elif model == 'ConvNetD2':
+        net = ConvNet(channel=channel, num_classes=num_classes, net_width=net_width, net_depth=2, net_act=net_act, net_norm=net_norm, net_pooling=net_pooling, im_size=im_size)
+    elif model == 'ConvNetD3':
+        net = ConvNet(channel=channel, num_classes=num_classes, net_width=net_width, net_depth=3, net_act=net_act, net_norm=net_norm, net_pooling=net_pooling, im_size=im_size)
+    elif model == 'ConvNetD4':
+        net = ConvNet(channel=channel, num_classes=num_classes, net_width=net_width, net_depth=4, net_act=net_act, net_norm=net_norm, net_pooling=net_pooling, im_size=im_size)
+    else:
+        net = None
+        exit(f'unknown model {model}')
+
+    return net 
+
+
 
 class ConvNet(nn.Module):
     def __init__(self, channel, num_classes, net_width, net_depth, net_act, net_norm, net_pooling, im_size = (32,32)):
@@ -74,3 +98,4 @@ class ConvNet(nn.Module):
                 shape_feat[2] //= 2
 
         return nn.Sequential(*layers), shape_feat
+    

@@ -1,7 +1,7 @@
 import os
 import torch 
 import numpy as np
-from utils import get_network
+from networks import get_network
 from stupid_diffaug import ParamDiffAug, DiffAugment
 
 class Distillation:
