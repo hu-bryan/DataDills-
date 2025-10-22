@@ -73,13 +73,6 @@ def get_dataset(dataset, data_path):
     return obj
 
 
-
-
-def get_default_convnet_setting():
-    net_width, net_depth, net_act, net_norm, net_pooling = 128, 3, 'relu', 'instancenorm', 'avgpooling'
-    return net_width, net_depth, net_act, net_norm, net_pooling
-
-
 def get_method(img_synth, label_synth, dataset, args):
     method = args.method 
 

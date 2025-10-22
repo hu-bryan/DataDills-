@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+def get_default_convnet_setting():
+    net_width, net_depth, net_act, net_norm, net_pooling = 128, 3, 'relu', 'instancenorm', 'avgpooling'
+    return net_width, net_depth, net_act, net_norm, net_pooling
+
 def get_network(model, channel, num_classes, im_size, seed):
     torch.random.manual_seed(seed) 
 
